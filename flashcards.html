@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Flashcards — Yuran</title>
+<style>
+  :root {
+    --sys-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Apple SD Gothic Neo", sans-serif;
+    --mono-font: "SF Mono", ui-monospace, Menlo, monospace;
+    /* Claude Code palette — warm, editorial */
+    --bg: #1a1613;
+    --bg-soft: #252019;
+    --bg-elev: #2d2720;
+    --paper: #f5ede0;
+    --paper-dim: #e8dcc7;
+    --ink: #1f1a14;
+    --ink-soft: #3a3128;
+    --accent: #cc7b5c;      /* warm coral */
+    --accent-bright: #e89274;
+    --accent-soft: #f2a88c;
+    --gold: #d4a574;         /* muted gold */
+    --sage: #8ba888;         /* sage green */
+    --sage-bright: #a8c5a0;
+    --mist: #b8a898;         /* warm muted */
+    --muted: #8c7f70;
+    --success: #8ba888;
+    --error: #c25e4a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--paper);
+    font-family: var(--sys-font);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(204,123,92,0.12), transparent 55%),
+      radial-gradient(ellipse at 80% 90%, rgba(139,168,136,0.08), transparent 55%),
+      radial-gradient(ellipse at 50% 50%, rgba(212,165,116,0.05), transparent 60%);
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(244,234,213,0.15);
+  }
+  .logo {
+    font-family: var(--sys-font);
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.03em;
+  }
+  .logo span { color: var(--accent-bright); }
+  .sub {
+    font-family: var(--mono-font);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--bg-soft);
+    border: 0.5px solid rgba(245,237,224,0.08);
+    padding: 12px 8px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--sys-font);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .stat-num.ok { color: var(--success); }
+  .stat-num.bad { color: var(--accent-soft); }
+  .stat-num.gold { color: var(--gold); }
+  .stat-label {
+    font-family: var(--mono-font);
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  /* Category filter */
+  .filters {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    background: transparent;
+    border: 0.5px solid rgba(245,237,224,0.2);
+    color: var(--paper);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-family: var(--sys-font);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+  .chip:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .chip.active {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Progress */
+  .progress {
+    font-family: var(--mono-font);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+  }
+  .progress-bar {
+    height: 2px;
+    background: rgba(245,237,224,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--gold), var(--sage));
+    transition: width 0.4s ease;
+  }
+
+  /* Card */
+  .card-stage {
+    margin-bottom: 24px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    background-image:
+      radial-gradient(circle at 15% 15%, rgba(212,165,116,0.18), transparent 55%),
+      radial-gradient(circle at 85% 85%, rgba(204,123,92,0.1), transparent 55%),
+      radial-gradient(circle at 50% 100%, rgba(139,168,136,0.08), transparent 50%);
+    transition: background 0.25s ease;
+  }
+  .card.revealed {
+    background: var(--bg-elev);
+    color: var(--paper);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(204,123,92,0.14), transparent 55%),
+      radial-gradient(circle at 80% 80%, rgba(139,168,136,0.1), transparent 55%),
+      linear-gradient(180deg, rgba(212,165,116,0.05), transparent 60%);
+    border: 0.5px solid rgba(212,165,116,0.2);
+  }
+  .card-tag {
+    font-family: var(--mono-font);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9a8f7c;
+  }
+  .card.revealed .card-tag { color: var(--muted); }
+  .card-main {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 0;
+  }
+  .card-content {
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .prompt-text {
+    font-family: var(--sys-font);
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+    color: inherit;
+  }
+  .answer-text {
+    font-family: var(--sys-font);
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: inherit;
+  }
+  .example {
+    font-family: var(--sys-font);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--gold);
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(212,165,116,0.3);
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+  .note {
+    font-family: var(--sys-font);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--mist);
+    margin-top: 8px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+  .hint-tap {
+    text-align: center;
+    font-family: var(--mono-font);
+    font-size: 9px;
+    color: #aaa095;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .card.revealed .hint-tap { color: var(--muted); }
+
+  /* Accent line */
+  .accent-line {
+    position: absolute;
+    top: 0;
+    left: 28px;
+    right: 28px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--gold) 50%, var(--sage) 100%);
+    border-radius: 0 0 2px 2px;
+    opacity: 0.85;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .btn {
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--sys-font);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: -0.01em;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-bad {
+    background: rgba(194,94,74,0.12);
+    color: #e8a090;
+    border: 0.5px solid rgba(194,94,74,0.35);
+  }
+  .btn-bad:hover { background: rgba(194,94,74,0.2); }
+  .btn-ok {
+    background: rgba(139,168,136,0.14);
+    color: var(--sage-bright);
+    border: 0.5px solid rgba(139,168,136,0.4);
+  }
+  .btn-ok:hover { background: rgba(139,168,136,0.22); }
+  .btn-bad:disabled, .btn-ok:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .btn-bad:disabled:hover { background: rgba(166,61,61,0.15); }
+  .btn-ok:disabled:hover { background: rgba(107,142,78,0.15); }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(244,234,213,0.2);
+    color: var(--paper);
+    padding: 12px;
+    border-radius: 10px;
+    font-family: var(--sys-font);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .backup-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .backup-row label {
+    cursor: pointer;
+    display: block;
+  }
+
+  .reset-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: var(--sys-font);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 20px;
+    display: block;
+    margin: 0 auto;
+    text-decoration: underline;
+    text-decoration-color: rgba(138,131,120,0.3);
+  }
+  .reset-btn:hover { color: var(--accent-soft); }
+
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty-big {
+    font-family: var(--sys-font);
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Flash<span>·</span>cards</div>
+    <div class="sub" id="saveStatus">Yuran / EN</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Deck</div></div>
+    <div class="stat"><div class="stat-num" id="sDone">0</div><div class="stat-label">Seen</div></div>
+    <div class="stat"><div class="stat-num ok" id="sOk">0</div><div class="stat-label">Got it</div></div>
+    <div class="stat"><div class="stat-num gold" id="sMastered">0</div><div class="stat-label">★ Master</div></div>
+  </div>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="progress" id="progressText">0 / 0</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div id="cardArea">
+    <div class="card-stage">
+      <div class="card" id="card" onclick="toggleReveal()">
+        <div class="accent-line"></div>
+        <div class="card-tag" id="cardTag">—</div>
+        <div class="card-main">
+          <div class="card-content" id="cardContent">
+            <div id="promptText" class="prompt-text">—</div>
+            <div id="answerBlock" style="display:none;">
+              <div id="answerText" class="answer-text">—</div>
+              <div class="example" id="exampleText"></div>
+              <div class="note" id="noteText"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hint-tap" id="hintTap">Tap to show answer</div>
+      </div>
+    </div>
+
+    <div class="actions" id="flipActions">
+      <button class="btn btn-bad" id="btnBad" onclick="mark(false)">✗ Again</button>
+      <button class="btn btn-ok" id="btnOk" onclick="mark(true)">✓ Got it</button>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevCard()">← Prev</button>
+      <button class="nav-btn" id="dirToggle" onclick="toggleDirection()">KR → EN</button>
+      <button class="nav-btn" onclick="nextCard()">Next →</button>
+    </div>
+    <div class="nav-row" style="margin-top:10px;">
+      <button class="nav-btn" onclick="shuffleDeck()" style="flex:1;">⤭ Shuffle</button>
+    </div>
+  </div>
+
+  <div class="backup-row">
+    <button class="nav-btn" onclick="exportProgress()">↓ Export</button>
+    <label class="nav-btn" style="text-align:center;">
+      ↑ Import
+      <input type="file" accept="application/json" onchange="importProgress(event)" style="display:none;">
+    </label>
+  </div>
+
+  <button class="reset-btn" onclick="resetProgress()">Reset progress</button>
+</div>
+
+<script>
+// ===== DECK =====
+const DECK = [
+  // ===== Weak points (Error Log) =====
+  {k:"다른 주제로 넘어가도 돼?", e:"Can we move to another topic?", ex:"Can we move to another topic? I'm getting tired of this one.", note:"a/an + 단수명사. 'other topic' ✗", c:"weak"},
+  {k:"좋은 도구인 것 같아", e:"NotebookLM is a great tool", ex:"NotebookLM is a great tool for organizing research.", note:"셀 수 있는 단수명사 앞엔 a/an", c:"weak"},
+  {k:"내 시스템에 어떻게 활용?", e:"How can I use it for my system?", ex:"How can I use it for my learning system?", note:"use FOR 목적. to ✗", c:"weak"},
+  {k:"연동할 수 있어?", e:"Can you link to NotebookLM?", ex:"Can you link this to NotebookLM directly?", note:"link TO / connect TO / integrate WITH", c:"weak"},
+  {k:"Cowork 기능", e:"the Cowork feature", ex:"The Cowork feature lets you share documents in real time.", note:"특정 기능 지칭 = the", c:"weak"},
+  {k:"3시에", e:"at 3pm", ex:"Let's meet at 3pm tomorrow.", note:"at 시간 / on 날짜 / in 월·연도", c:"weak"},
+  {k:"스프레드시트에 쓰면", e:"If I update my Google Sheet", ex:"If I update my Google Sheet, will it sync automatically?", note:"소프트웨어 안 = in", c:"weak"},
+  {k:"데이터를 받아?", e:"Does NotebookLM also get the data?", ex:"Does NotebookLM also get the data when I update the source?", note:"does + 동사원형 (gets ✗)", c:"weak"},
+  {k:"트레킹 할 것 같아 (미확정)", e:"I'd probably go trekking", ex:"If I had a free weekend, I'd probably go trekking in the mountains.", note:"would = 미확정, will = 확정", c:"weak"},
+  {k:"트레킹 하러 가다", e:"go trekking", ex:"We're going trekking this weekend.", note:"go + -ing (go for trekking ✗)", c:"weak"},
+  {k:"더 많은 걸 느껴 (과정)", e:"I feel more through trekking than through reading", ex:"I feel more through trekking than through reading about it.", note:"through = 과정, from = 원인", c:"weak"},
+  {k:"나 이제 요가 안 해", e:"I don't do yoga anymore", ex:"I don't do yoga anymore — I switched to pilates.", note:"anymore 한 단어로", c:"weak"},
+  {k:"3시로 바꾸자", e:"Can we push it to 3 instead?", ex:"Can we push it to 3 instead? Something came up.", note:"push IT to — it 필수", c:"weak"},
+  {k:"그만 생각해 (stop + ~ing)", e:"I can't stop thinking about it", ex:"I can't stop thinking about that problem.", note:"stop + ~ing (stop to ✗)", c:"weak"},
+  {k:"사무실이 10분 거리야", e:"My office is ten minutes away", ex:"My office is ten minutes away from my apartment.", note:"10 minutes away (far 불필요)", c:"weak"},
+  {k:"집에 일찍 왔어", e:"I came home early", ex:"I came home early because I wasn't feeling well.", note:"come home (back 불필요)", c:"weak"},
+  {k:"나 자신을 성찰하다", e:"I can't reflect on myself", ex:"I need time to reflect on myself before making a decision.", note:"reflect ON (자동사)", c:"weak"},
+  {k:"동기는 문제에서 온다", e:"Motivation usually comes from a problem", ex:"Motivation usually comes from a problem you've faced yourself.", note:"comes (현재) / a + 명사", c:"weak"},
+  {k:"시장이 준비가 안 됨", e:"The market isn't ready for that", ex:"The market isn't ready for that yet — maybe in a few years.", note:"the + market", c:"weak"},
+  {k:"재밌는 거 얘기하자", e:"Let's chat about something fun", ex:"Let's chat about something fun instead of work.", note:"chat ABOUT + 주제", c:"weak"},
+  {k:"팔 생각이었어", e:"I was thinking of selling", ex:"I was thinking of selling it to a feed company.", note:"think of + ~ing", c:"weak"},
+  {k:"가공해서 다른 제품으로", e:"process it into other products", ex:"We could process it into other products like powder or snacks.", note:"process INTO / turn INTO", c:"weak"},
+  {k:"냉동으로 팔아", e:"I sell it frozen", ex:"I already sell it frozen to restaurants.", note:"sell + 목적어 + 상태", c:"weak"},
+  {k:"작은 목표만 있어", e:"I only have small goals", ex:"I only have small goals right now — nothing ambitious.", note:"복수형 goals", c:"weak"},
+  {k:"Initiative 필요해", e:"I need bigger initiatives", ex:"I need bigger initiatives to feel challenged.", note:"the 불필요", c:"weak"},
+  {k:"새 프로젝트 찾기", e:"finding a new project", ex:"I'm finding a new project to work on this quarter.", note:"a + 단수명사", c:"weak"},
+  {k:"팀 만드는 법 배우기", e:"learn how to build a team", ex:"I want to learn how to build a team from scratch.", note:"build a team", c:"weak"},
+  {k:"1년은 긴 시간이야", e:"A year is a long time", ex:"A year is a long time to stay in one place.", note:"a + year / a + long time", c:"weak"},
+  {k:"문화 없으면 지루 (가정)", e:"I'd get bored without any cultural things", ex:"I'd get bored without any cultural things to do.", note:"would / without any (이중부정 ❌)", c:"weak"},
+  {k:"한국에 수입할", e:"import to Korea", ex:"I want to import these products to Korea.", note:"import TO (목적지)", c:"weak"},
+  {k:"좋은 호텔에 머물 거야", e:"I'd stay at a nice hotel", ex:"If I had the budget, I'd stay at a nice hotel.", note:"stay AT + 장소 / would", c:"weak"},
+  {k:"완벽한 문장 만들 때", e:"when I make a perfect sentence", ex:"I feel great when I make a perfect sentence in English.", note:"a + 단수명사", c:"weak"},
+  {k:"샤워하고 잘게", e:"I'll take a shower and go to bed", ex:"I'll take a shower and go to bed early tonight.", note:"a shower / go to bed", c:"weak"},
+
+  // ===== Time / scheduling =====
+  {k:"시간 앞당기다", e:"Can we move it up to 1?", ex:"Can we move it up to 1? I have another meeting at 3.", note:"move it up to [시간]", c:"daily"},
+  {k:"3시로 하자 (캐주얼)", e:"Let's make it 3", ex:"Let's make it 3 then — works for me.", note:"make it [시간]", c:"daily"},
+  {k:"늦고 있어", e:"I'm running late", ex:"I'm running late — I'll be there in 10 minutes.", note:"running late", c:"daily"},
+  {k:"미팅이 길어졌어", e:"My meeting ran over", ex:"Sorry I'm late — my meeting ran over.", note:"run over = 예정보다 길어지다", c:"biz"},
+  {k:"혹시 ~하면 문자해줘", e:"In case your meeting runs over, just text me", ex:"In case your meeting runs over, just text me and we'll reschedule.", note:"In case [상황], just [행동]", c:"daily"},
+  {k:"편하게 알려줘", e:"Feel free to let me know", ex:"Feel free to let me know if you need anything.", note:"Feel free to + 동사원형", c:"daily"},
+  {k:"걱정 말고", e:"No worries — take your time", ex:"No worries — take your time and let me know when you're ready.", note:"no worries / no pressure / no rush", c:"daily"},
+  {k:"문자 보내줘 (캐주얼)", e:"Shoot me a text", ex:"Shoot me a text when you're heading over.", note:"shoot > send (캐주얼)", c:"daily"},
+  {k:"소식 계속 알려줘", e:"Keep me posted", ex:"Keep me posted on how the project goes.", note:"Keep me posted (on ~)", c:"daily"},
+  {k:"연락해! (캐주얼)", e:"Hit me up if you're free", ex:"Hit me up if you're free this weekend.", note:"hit me up = 연락하다", c:"daily"},
+  {k:"오늘 정말 즐거웠어!", e:"I had a blast today!", ex:"I had a blast today — we should do this again.", note:"had a blast > had fun", c:"daily"},
+  {k:"도착하면 알려줘", e:"Let me know when you land", ex:"Let me know when you land so I can pick you up.", note:"land = 도착 (비행)", c:"daily"},
+  {k:"나는 ~형 인간이야", e:"I'm more of a morning person", ex:"I'm more of a morning person — I can't focus at night.", note:"I'm more of a ~ person", c:"daily"},
+  {k:"기대에 비해 밋밋한", e:"The launch was underwhelming", ex:"Honestly, the launch was a bit underwhelming.", note:"↔ overwhelming", c:"biz"},
+  {k:"못 들었어 / 놓쳤어", e:"I didn't catch that", ex:"Sorry, I didn't catch that — could you repeat it?", note:"I didn't catch + 명사", c:"daily"},
+  {k:"3시 괜찮아?", e:"Does 3pm work for you?", ex:"Does 3pm work for you, or should we pick another time?", note:"Does [시간] work for you?", c:"daily"},
+  {k:"좋은 여행 되길", e:"I hope you have a safe flight", ex:"I hope you have a safe flight — text me when you land!", note:"I hope you + 동사", c:"daily"},
+  {k:"미국 (캐주얼)", e:"the States", ex:"She's been living in the States for five years.", note:"the States > America", c:"daily"},
+  {k:"~으로 가는 중", e:"heading to the office", ex:"I'm heading to the office now — be there in 20.", note:"heading to ~ > going to", c:"daily"},
+
+  // ===== April 7/8 new expressions =====
+  {k:"돈이 문제가 안 된다면", e:"If money were no object", ex:"If money were no object, I'd travel the world for a year.", note:"가정법: were (not was)", c:"daily"},
+  {k:"경험을 온몸으로 느끼다", e:"soak in a whole new lifestyle", ex:"I want to soak in a whole new lifestyle for a few months.", note:"soak in + 경험", c:"daily"},
+  {k:"완벽하게 해내다", e:"You nailed it!", ex:"You nailed it! That presentation was perfect.", note:"nail = 완벽하게 해내다", c:"daily"},
+  {k:"호텔에 체크인하다", e:"check into a nice hotel", ex:"I'd love to check into a nice hotel for the weekend.", note:"check into + 장소", c:"daily"},
+  {k:"구경하다, 둘러보다", e:"check out some landmarks", ex:"Let's check out some landmarks while we're here.", note:"check out = 구경하다", c:"daily"},
+  {k:"맛있는 거 사먹다", e:"grab something to eat", ex:"Let's grab something to eat before the movie.", note:"grab = 빠르게 사다/먹다", c:"daily"},
+  {k:"한국에 가져오다 (수입)", e:"bring back to Korea", ex:"I want to bring these products back to Korea to sell.", note:"bring back = 가져오다", c:"biz"},
+  {k:"다시 가공하다", e:"reprocess maesaengi", ex:"We could reprocess maesaengi into different product forms.", note:"re + process", c:"biz"},
+  {k:"시간이 엄청 걸리다", e:"It takes forever to develop", ex:"New product development takes forever to complete.", note:"takes forever = 오래 걸리다", c:"daily"},
+  {k:"매우 피곤하다 (캐주얼)", e:"I'm beat", ex:"I'm beat after that meeting — I need coffee.", note:"beat = 매우 피곤한", c:"daily"},
+  {k:"쓰러져 자다", e:"I just want to crash", ex:"I just want to crash — it's been a long day.", note:"crash = 쓰러져 자다", c:"daily"},
+  {k:"자러 가다 (캐주얼)", e:"hit the hay", ex:"I'm gonna hit the hay — see you tomorrow.", note:"hit the hay = 자러 가다", c:"daily"},
+  {k:"슬럼프 중이다", e:"I'm in a slump", ex:"I'm in a slump right now — can't find motivation.", note:"in a slump", c:"daily"},
+  {k:"막막하다, 정체된 느낌", e:"I'm feeling stuck", ex:"I'm feeling stuck with this project — no clear direction.", note:"feeling stuck", c:"daily"},
+  {k:"야심찬", e:"My goals aren't ambitious enough", ex:"My goals aren't ambitious enough — I need to aim higher.", note:"ambitious = 야심찬", c:"biz"},
+  {k:"추구하다", e:"pursue new opportunities", ex:"I want to pursue new opportunities this year.", note:"pursue = 추구하다", c:"biz"},
+  {k:"나중에 다시 연락할게", e:"I'll get back to you soon", ex:"I'll get back to you soon — I'm in a meeting right now.", note:"get back to + 사람", c:"biz"},
+  {k:"일에 허덕이다", e:"I'm swamped with work", ex:"I'm swamped with work this week — can we meet next week?", note:"swamped = 허덕이는", c:"biz"},
+  {k:"훨씬 더 많은", e:"way more stuff to do", ex:"NYC has way more stuff to do than other cities.", note:"way more = 훨씬 더", c:"daily"},
+  {k:"일상 업무", e:"automate day-to-day tasks", ex:"I'm trying to automate my day-to-day tasks.", note:"day-to-day = 일상적", c:"biz"},
+  {k:"~에 통합하다", e:"integrate it into my workflow", ex:"I want to integrate Claude into my workflow.", note:"integrate INTO", c:"biz"},
+  {k:"수분 함량", e:"high moisture content", ex:"Maesaengi has a high moisture content, so it freezes well.", note:"moisture = 수분", c:"biz"},
+  {k:"그 시장은 포화됐어", e:"The market's saturated", ex:"The market's saturated with similar products right now.", note:"saturated = 포화된", c:"biz"},
+  {k:"~에서 비롯되다", e:"stems from a real problem", ex:"Good motivation stems from a real problem you've experienced.", note:"stem from = 비롯되다", c:"biz"},
+  {k:"밋밋한/뻔한 (물건)", e:"too generic", ex:"That packaging feels too generic for our brand.", note:"generic = 뻔한", c:"daily"},
+  {k:"돈 때문에 하는 거야", e:"I'm mostly in it for the money", ex:"I'm mostly in it for the money — not passionate about it.", note:"in it for ~", c:"biz"},
+  {k:"따라잡다", e:"The market hasn't caught up yet", ex:"The market hasn't caught up yet, but it will soon.", note:"catch up = 따라잡다", c:"biz"},
+
+  // ===== Article Active =====
+  {k:"오히려, 굳이 따지면", e:"if anything", ex:"The update didn't help. If anything, it made things worse.", note:"부정문 뒤에 반전용", c:"article"},
+  {k:"~한 인상을 주다", e:"come across as", ex:"We don't want to come across as too aggressive in the pitch.", note:"come across as + 형용사", c:"article"},
+  {k:"~와 씨름하다", e:"contend with", ex:"Every startup has to contend with cash flow issues.", note:"contend with + 문제", c:"article"},
+  {k:"희석된, 밋밋해진", e:"watered-down", ex:"This is a watered-down version of the original plan.", note:"watered-down = 약해진", c:"article"},
+  {k:"결정적 타격", e:"another nail in the coffin", ex:"The price hike was another nail in the coffin for the brand.", note:"coffin = 관", c:"article"},
+  {k:"대체 뭔 일이야?", e:"What gives?", ex:"You said you'd come — what gives?", note:"캐주얼 항의", c:"article"},
+  {k:"처치 곤란이야", e:"be stuck with", ex:"We're stuck with this supplier for another year.", note:"stuck with = 처치 곤란", c:"article"},
+  {k:"~하기는커녕", e:"far from ~ing", ex:"Far from solving the problem, it actually made it worse.", note:"far from + ~ing", c:"article"},
+  {k:"선망받는, 탐나는", e:"a coveted position", ex:"She landed a coveted position at Google.", note:"coveted = 선망받는", c:"article"},
+  {k:"두 세계를 걸치다", e:"straddle two worlds", ex:"She straddles two worlds — corporate and creative.", note:"straddle = 걸치다", c:"article"},
+
+  // ===== Article Passive (인식용) =====
+  {k:"숨 막히는 (비유)", e:"suffocating", ex:"The pressure at work became suffocating.", note:"비유적 사용", c:"passive"},
+  {k:"가리다, 흐리게 하다", e:"obscure", ex:"The real issue was obscured by all the drama.", note:"hide보다 문학적", c:"passive"},
+  {k:"~만 해도 (강조)", e:"so much as", ex:"Don't so much as touch it.", note:"부정 강조", c:"passive"},
+  {k:"~를 중심으로 돌아가다", e:"centre around", ex:"The debate centred around climate policy.", note:"= revolve around", c:"passive"},
+  {k:"~에 대해 보상받다", e:"be rewarded for", ex:"She was rewarded for her patience.", note:"rewarded FOR", c:"passive"},
+  {k:"~가 진행하는", e:"fronted by", ex:"The campaign is fronted by a famous actress.", note:"front = 대표하다", c:"passive"},
+  {k:"유행이 지난", e:"out of style", ex:"That look is completely out of style now.", note:"↔ in style", c:"passive"},
+  {k:"~에 타격을 주다", e:"take a hit", ex:"Sales took a hit during the pandemic.", note:"take hits on ~", c:"passive"},
+  {k:"~와의 연대로", e:"in solidarity with", ex:"They wore black in solidarity with the protesters.", note:"연대 표현", c:"passive"},
+  {k:"죄책감이 드는 일", e:"a guilty thing to do", ex:"Skipping the gym felt like a guilty thing to do.", note:"죄책감 관련", c:"passive"},
+  {k:"아낌없는 사용", e:"liberal use of", ex:"The article makes liberal use of anecdotes.", note:"liberal = 아낌없는", c:"passive"},
+  {k:"데이팅 시장", e:"the dating landscape", ex:"The dating landscape has changed completely.", note:"landscape = 업계 환경", c:"passive"},
+  {k:"자랑하는", e:"boastful", ex:"He gets boastful after a few drinks.", note:"자랑하는 태도", c:"passive"},
+  {k:"무난한, 밋밋한 (사람/콘텐츠)", e:"beige", ex:"Her personality is kind of beige — nothing stands out.", note:"비유적 표현", c:"passive"},
+  {k:"판이 바뀌고 있다", e:"the script is shifting", ex:"In Hollywood, the script is shifting toward diverse casting.", note:"상황이 뒤집히다", c:"passive"},
+  {k:"증명하다 / 긍정하다", e:"affirm", ex:"The results affirm our hypothesis.", note:"확증, 긍정", c:"passive"},
+  {k:"스스로 선언하다", e:"pronounce yourself ~", ex:"She pronounced herself ready for the challenge.", note:"자기 규정", c:"passive"},
+  {k:"정치화", e:"politicisation", ex:"The politicisation of science is concerning.", note:"정치적 이슈화", c:"passive"},
+  {k:"서서히 무너지다", e:"crumble", ex:"His confidence began to crumble under pressure.", note:"점진적 붕괴", c:"passive"},
+  {k:"맹목적 충성", e:"blind allegiance", ex:"Blind allegiance to any leader is dangerous.", note:"비판적 사고 없이", c:"passive"},
+  {k:"부끄러운 일이 아니다", e:"there's no shame in ~ing", ex:"There's no shame in asking for help.", note:"격려 표현", c:"passive"},
+  {k:"~와 동시에", e:"alongside", ex:"She studies Japanese alongside Chinese.", note:"at the same time as", c:"passive"},
+  {k:"(부정적인 것을) 되찾다", e:"reclaiming the word", ex:"The community is reclaiming the word for themselves.", note:"탈환/재전유", c:"passive"},
+  {k:"거부감을 느끼다", e:"icked out", ex:"I was kind of icked out by his behavior.", note:"데이팅 슬랭", c:"passive"},
+
+  // ===== Slang / neologisms =====
+  {k:"연인 공개 (SNS)", e:"hard-launch", ex:"She finally hard-launched her boyfriend on Instagram.", note:"↔ soft-launch (암시)", c:"slang"},
+  {k:"연인 암시 (SNS)", e:"soft-launch", ex:"That's definitely a soft-launch — you can see his hand in the photo.", note:"↔ hard-launch (공개)", c:"slang"},
+  {k:"갑자기 드는 거부감", e:"the ick", ex:"He gave me the ick when he chewed with his mouth open.", note:"데이팅 슬랭", c:"slang"},
+  {k:"이성애 체념", e:"heterofatalism", ex:"Heterofatalism is trending among young women online.", note:"이성애 실패할 거란 체념", c:"slang"},
+  {k:"평범함", e:"norminess", ex:"There's a certain norminess to mainstream fashion.", note:"normie + ness", c:"slang"},
+  {k:"찐따 같은", e:"loser-ish", ex:"That outfit looks kind of loser-ish, no offense.", note:"-ish = ~스러운", c:"slang"},
+  {k:"남친 중심녀", e:"boyfriend-girl", ex:"She used to be a total boyfriend-girl before the breakup.", note:"남친 중심적인 여자", c:"slang"},
+  {k:"자랑, 과시", e:"a flex", ex:"Posting that Rolex is such a flex.", note:"SNS 슬랭", c:"slang"},
+
+  // ===== Business advanced =====
+  {k:"나중에, 앞으로", e:"down the line", ex:"This will cause problems down the line if we don't fix it now.", note:"미래의 어느 시점", c:"biz"},
+  {k:"감정적으로 와닿다", e:"resonate with", ex:"Does this message resonate with our target audience?", note:"resonate WITH", c:"biz"},
+  {k:"완전히 정체되다", e:"flatline", ex:"Sales flatlined in Q3 after the market shift.", note:"flatline = 일직선", c:"biz"},
+  {k:"유리한 요인 / 순풍", e:"tailwind", ex:"Remote work was a tailwind for digital companies.", note:"↔ headwind", c:"biz"},
+  {k:"기존 대기업 / 현직자", e:"incumbent", ex:"Incumbent companies were slow to adapt to AI.", note:"incumbent = 현직의", c:"biz"},
+  {k:"간헐적으로", e:"intermittently", ex:"The server has been going down intermittently all week.", note:"간헐적으로", c:"biz"},
+  {k:"당분간은", e:"for the foreseeable future", ex:"Remote work will remain policy for the foreseeable future.", note:"예측 가능한 미래", c:"biz"},
+  {k:"고려 중인 / 논의 대상", e:"on the table", ex:"Several options are still on the table for the expansion.", note:"on the table", c:"biz"},
+  {k:"이미 반영되어 있다 (주가)", e:"baking in", ex:"The stock price is already baking in 20% growth.", note:"금융 용어", c:"biz"},
+  {k:"나중에 유용하게 쓰이다", e:"come in handy", ex:"These skills will come in handy down the line.", note:"come in handy", c:"biz"},
+  {k:"결정을 내리다", e:"pull the trigger", ex:"The CEO finally pulled the trigger on the acquisition.", note:"결단력 있는 실행", c:"biz"},
+  {k:"제도 허점을 이용하다", e:"game the system", ex:"He found a loophole and gamed the system.", note:"game = 악용하다", c:"biz"},
+  {k:"거시적 관점, 큰 그림", e:"a bird's eye view", ex:"From a bird's eye view, our strategy is working well.", note:"bird's eye = 조감", c:"biz"},
+  {k:"확고한 입장 / 집중하다", e:"double down", ex:"We're doubling down on AI investments this year.", note:"double down ON", c:"biz"},
+  {k:"다음에 하자", e:"take a rain check", ex:"Can I take a rain check on lunch? I'm swamped today.", note:"rain check = 교환권", c:"biz"},
+  {k:"한번 해보다", e:"take a stab at", ex:"Let me take a stab at the first draft.", note:"stab at = 시도", c:"biz"},
+  {k:"고려하다", e:"take into account", ex:"We need to take market conditions into account.", note:"take ~ into account", c:"biz"},
+  {k:"~을 고려하면", e:"Given the timeline", ex:"Given the timeline, we should pivot our strategy.", note:"Given that + 절", c:"biz"},
+  {k:"생산량 확대", e:"ramp up production", ex:"We need to ramp up production before the holidays.", note:"ramp up = 증대", c:"biz"},
+  {k:"규모를 키우다", e:"scale up operations", ex:"Time to scale up operations — we've validated the model.", note:"scale up = 확장", c:"biz"},
+
+  // ===== Meeting / communication =====
+  {k:"나중에 따로 얘기해요", e:"Let's take this offline", ex:"Let's take this offline and discuss after the meeting.", note:"회의 중 사이드 토픽 넘길 때", c:"meet"},
+  {k:"나중에 다시 논의해요", e:"Let's circle back", ex:"Let's circle back on this next week with more data.", note:"circle back = 재논의", c:"meet"},
+  {k:"대략 그때쯤 잡아둡시다", e:"Pencil it in", ex:"Let me pencil it in for Thursday afternoon.", note:"임시 일정", c:"meet"},
+  {k:"간단히 연락/상황 확인", e:"Touch base", ex:"Let's touch base later this week to see where we are.", note:"touch base = 연락", c:"meet"},
+  {k:"의견이 일치하다", e:"See eye-to-eye", ex:"We don't see eye-to-eye on pricing strategy.", note:"eye-to-eye = 일치", c:"meet"},
+  {k:"후속 연락드립니다", e:"Following up on", ex:"Following up on our call yesterday, here are the next steps.", note:"이메일 첫 문장", c:"meet"},
+  {k:"마무리 짓다", e:"Closing the loop", ex:"Just closing the loop on this — we've signed the contract.", note:"loop = 순환", c:"meet"},
+  {k:"누군가를 대화에 포함", e:"Looping someone in", ex:"I'm looping in Sarah since she's leading this project.", note:"loop in = 포함시키다", c:"meet"},
+  {k:"목소리 잘 들리나요?", e:"Can you hear me clearly?", ex:"Can you hear me clearly? I think my mic is acting up.", note:"화상회의 시작", c:"meet"},
+  {k:"음성이 끊겨요", e:"I think you're breaking up", ex:"I think you're breaking up — can you repeat that?", note:"breaking up = 끊김", c:"meet"},
+  {k:"음소거인 것 같아요", e:"I think you're on mute", ex:"You're on mute — we can't hear you.", note:"on mute", c:"meet"},
+
+  // ===== Project / work =====
+  {k:"순조롭게 진행 중", e:"On track", ex:"We're on track to launch next month as planned.", note:"track = 궤도", c:"biz"},
+  {k:"보류 중", e:"On the back burner", ex:"That project's on the back burner until Q2.", note:"back burner = 뒷쪽 화구", c:"biz"},
+  {k:"계획 안에 있음", e:"On the roadmap", ex:"It's on the roadmap for Q2 release.", note:"roadmap = 계획", c:"biz"},
+  {k:"인지하고 모니터링 중", e:"On my radar", ex:"It's on my radar — I'll keep an eye on it.", note:"radar = 관심권", c:"biz"},
+  {k:"재검토하다", e:"Revisit this", ex:"Let's revisit this next week when we have more info.", note:"revisit = 재방문/재검토", c:"biz"},
+  {k:"처리할 여유가 없다", e:"I don't have bandwidth", ex:"I don't have bandwidth today — can it wait?", note:"bandwidth = 여유", c:"biz"},
+  {k:"긴급 업무에 정신없다", e:"Going through fire drills", ex:"I'm going through some fire drills today — rain check?", note:"fire drill = 급한 일", c:"biz"},
+  {k:"제출해야 할 일들", e:"Working on deliverables", ex:"I'm working on multiple deliverables this week.", note:"deliverables = 결과물", c:"biz"},
+  {k:"진척이 안 간다", e:"Bogged down in", ex:"I got bogged down in legal reviews all week.", note:"bogged down = 발목 잡힘", c:"biz"},
+  {k:"~에 묶여있다", e:"Tied up with meetings", ex:"I'm tied up with meetings all afternoon.", note:"tied up = 묶여있는", c:"biz"},
+  {k:"부재중 (공식)", e:"Out of office", ex:"I'll be out of office next week for vacation.", note:"OOO 이메일", c:"biz"},
+  {k:"연락 안 됨", e:"Out of pocket", ex:"She's out of pocket until Friday — try her Monday.", note:"out of pocket = 연락 불가", c:"biz"},
+  {k:"임시방편 (중립)", e:"a workaround", ex:"We need a workaround until the fix ships.", note:"workaround = 우회책", c:"biz"},
+  {k:"급한 불 끄기", e:"just a stopgap", ex:"This is just a stopgap solution for now.", note:"stopgap = 임시", c:"biz"},
+  {k:"겉만 가리는 해결", e:"a band-aid solution", ex:"That's just a band-aid solution — it won't last.", note:"부정적 뉘앙스", c:"biz"},
+
+  // ===== Idioms =====
+  {k:"더 노력하다", e:"Go the extra mile", ex:"She always goes the extra mile for her clients.", note:"extra mile = 더 나아가기", c:"idiom"},
+  {k:"완전히 믿지 않다", e:"Take it with a grain of salt", ex:"Take that report with a grain of salt — the source is biased.", note:"grain of salt = 소금 한 알", c:"idiom"},
+  {k:"양날의 검", e:"A double-edged sword", ex:"Social media is a double-edged sword for brands.", note:"double-edged = 양날의", c:"idiom"},
+  {k:"잠깐만 기다려줘", e:"Bear with me", ex:"Bear with me while I pull up the file.", note:"bear with = 참아주다", c:"idiom"},
+  {k:"짜증나게 하다", e:"Get under my skin", ex:"That comment really got under my skin.", note:"skin = 피부 아래", c:"idiom"},
+  {k:"감을 잡다", e:"Get the hang of it", ex:"You'll get the hang of it after a few tries.", note:"hang of = 요령", c:"idiom"},
+  {k:"우연히 마주치다", e:"Run into someone", ex:"I ran into an old friend at the coffee shop.", note:"run into = 마주치다", c:"idiom"},
+  {k:"공감하다", e:"I can relate to that", ex:"I can really relate to what you're going through.", note:"relate TO", c:"idiom"},
+  {k:"책임을 지다", e:"Be on the hook", ex:"Who's on the hook if this goes over budget?", note:"on the hook = 책임", c:"biz"},
+  {k:"실수하다", e:"Dropped the ball", ex:"We dropped the ball on that deadline.", note:"drop the ball = 실수", c:"biz"},
+  {k:"눈치를 보다", e:"Read the room", ex:"He just can't read the room during meetings.", note:"room = 분위기", c:"biz"},
+  {k:"핵심 리더", e:"Quarterback the deal", ex:"She quarterbacked the entire deal from start to finish.", note:"quarterback = 총괄", c:"biz"},
+  {k:"흔한, 평범한", e:"Par for the course", ex:"Delays are par for the course in construction.", note:"par = 기준", c:"biz"},
+
+  // ===== Nuance =====
+  {k:"까다로운", e:"That's tricky", ex:"That's tricky — there's no obvious answer.", note:"tricky = 까다로운", c:"daily"},
+  {k:"불확실한, 긴가민가한", e:"It's a bit iffy", ex:"The weather's a bit iffy for tomorrow's hike.", note:"iffy = 불확실한", c:"daily"},
+  {k:"확답하기 곤란한", e:"It's hard to say", ex:"It's hard to say without more information.", note:"애매한 답", c:"daily"},
+  {k:"기준이 불분명한 영역", e:"kind of a gray area", ex:"That's kind of a gray area legally.", note:"gray area = 회색지대", c:"daily"},
+
+  // ===== Daily / small talk =====
+  {k:"이 자리 비었나요?", e:"Is this seat taken?", ex:"Excuse me, is this seat taken?", note:"seat taken = 자리 있는", c:"daily"},
+  {k:"무슨 일 하고 있어요?", e:"What are you working on?", ex:"What are you working on these days?", note:"working on + 명사", c:"daily"},
+  {k:"하루 어떻게 보내고 있어요?", e:"How's your day going so far?", ex:"How's your day going so far? Busy?", note:"going so far", c:"daily"},
+  {k:"요즘 날씨 이상하지 않아요?", e:"The weather's been crazy lately", ex:"The weather's been crazy lately, hasn't it?", note:"crazy lately", c:"daily"},
+  {k:"몸이 좀 안 좋아", e:"I'm under the weather", ex:"I'm feeling a bit under the weather today.", note:"비 맞은 느낌", c:"daily"},
+  {k:"컨디션 별로야", e:"I feel a bit off", ex:"I feel a bit off today — not sure why.", note:"off = 정상이 아닌", c:"daily"},
+  {k:"난 술에 약해", e:"I can't hold my liquor", ex:"I can't hold my liquor — two drinks and I'm done.", note:"hold one's liquor", c:"daily"},
+  {k:"난 수학에 약해", e:"I don't have a head for numbers", ex:"I don't have a head for numbers — that's why I hired an accountant.", note:"head for ~", c:"daily"},
+  {k:"난 추위에 약해", e:"I get cold very easily", ex:"I get cold very easily — I always bring a jacket.", note:"get cold = 추워지다", c:"daily"},
+
+  // ===== Cafe =====
+  {k:"매장/포장?", e:"For here or to go?", ex:"Will that be for here or to go?", note:"주문 받을 때", c:"cafe"},
+  {k:"합계가 $12.50입니다", e:"That comes to $12.50", ex:"Your total comes to $12.50.", note:"comes to + 금액", c:"cafe"},
+  {k:"곧 나옵니다", e:"It'll be out in a sec", ex:"It'll be out in a sec — just steaming the milk.", note:"in a sec = 잠깐", c:"cafe"},
+  {k:"추천 메뉴 있나요?", e:"Any recommendations?", ex:"Any recommendations for a first-timer?", note:"recommendations?", c:"cafe"},
+
+  // ===== Closing / declining =====
+  {k:"괜찮아요 (거절)", e:"I'm good, thanks", ex:"I'm good, thanks — I already ate.", note:"I'm good = 괜찮아", c:"daily"},
+  {k:"다 됐어요 (완료)", e:"I'm all set", ex:"I'm all set — no need for anything else.", note:"all set = 준비 완료", c:"daily"},
+  {k:"편하게 가!", e:"Take it easy", ex:"Take it easy — see you tomorrow!", note:"작별 인사", c:"daily"},
+  {k:"좋은 하루!", e:"Have a good one!", ex:"Have a good one! Talk soon.", note:"캐주얼 작별", c:"daily"},
+  {k:"바쁘실 테니 이만", e:"I'll let you go now", ex:"I'm sure you're busy — I'll let you go now.", note:"대화 마무리", c:"daily"},
+
+  // ===== Relationships (April 14 voice chat) =====
+  {k:"미국에 있어 (the States)", e:"He's in the States right now", ex:"He's in the States right now for work.", note:"the + States 필수", c:"relate"},
+  {k:"머릿속에서 안 떠나", e:"It's always in the back of my mind", ex:"He's always in the back of my mind, even when I'm busy.", note:"in the back of my mind", c:"relate"},
+  {k:"우린 모호한 사이야", e:"We're in a gray area", ex:"We're in a gray area — not friends, not dating.", note:"gray area = 회색지대", c:"relate"},
+  {k:"어정쩡한 상태에 있다", e:"stuck in limbo", ex:"I feel like we're stuck in limbo with this relationship.", note:"limbo = 어중간한 상태", c:"relate"},
+  {k:"연락 유지하다", e:"in touch", ex:"We're not really in touch anymore.", note:"in touch / out of touch", c:"relate"},
+  {k:"어떻게 될지 모르겠다", e:"I have no idea where this is headed", ex:"I have no idea where this is headed between us.", note:"where ~ is headed", c:"relate"},
+  {k:"진짜 사이가 되다", e:"turn into something real", ex:"I want this to turn into something real.", note:"turn into + 명사", c:"relate"},
+  {k:"발 빼다, 도망가다", e:"pull away", ex:"He's been pulling away the past few weeks.", note:"pull away / bail", c:"relate"},
+  {k:"~을 겪었다 (이혼 등)", e:"He's been through a divorce", ex:"He's been through a tough divorce — give him space.", note:"been through + 경험", c:"relate"},
+  {k:"곤란하게 만들다", e:"put him on the spot", ex:"I don't want to put him on the spot by asking directly.", note:"put on the spot", c:"relate"},
+  {k:"막다른 느낌 들다", e:"feel cornered", ex:"He'd feel cornered if I asked him about commitment now.", note:"corner = 구석에 몰다", c:"relate"},
+  {k:"어떻게 ~ 안 했어?", e:"How come you never got married?", ex:"How come you never got married? You're great.", note:"how come = why (캐주얼)", c:"relate"},
+  {k:"약속하다, 헌신하다", e:"commit to a relationship", ex:"He travels too much to commit to a serious relationship.", note:"commit TO", c:"relate"},
+  {k:"거리를 두다", e:"keep his distance", ex:"He's been keeping his distance from me lately.", note:"keep distance FROM", c:"relate"},
+  {k:"화제를 회피하다", e:"dodge the topic", ex:"Every time I bring it up, he dodges the topic.", note:"dodge = 피하다", c:"relate"},
+
+  // ===== Gen Z reactions (April 14 expression bank) =====
+  {k:"비가 퍼붓고 있어", e:"It's really coming down", ex:"It's really coming down out there — bring an umbrella.", note:"coming down = 비/눈 쏟아짐", c:"genz"},
+  {k:"화 풀리다", e:"She'll cool off", ex:"Don't worry, she'll cool off in an hour.", note:"cool off = 진정되다", c:"genz"},
+  {k:"안 자고 뭐 해?", e:"What are you doing up?", ex:"What are you doing up at 3am?", note:"up = 깨어 있는", c:"genz"},
+  {k:"누가 부른 노래야?", e:"Who's it by?", ex:"This song is great — who's it by?", note:"by = ~에 의해 만들어진", c:"genz"},
+  {k:"아무도 눈치 못 채", e:"No one can tell", ex:"You dyed your hair? No one can tell — looks natural.", note:"tell = 구별/식별하다", c:"genz"},
+  {k:"진짜 어이없어 (리액션)", e:"I can't even", ex:"He wore flip-flops to the interview. I can't even.", note:"문장 끝맺지 않음", c:"genz"},
+  {k:"납득되네 / 말이 되네", e:"That tracks", ex:"He ghosted her? Honestly, that tracks.", note:"track = 들어맞다", c:"genz"},
+  {k:"그건 무슨 상황이야?", e:"What's that about?", ex:"He's been acting weird — what's that about?", note:"의문/궁금증", c:"genz"},
+  {k:"내 말이 / 그러게 말이야", e:"Tell me about it", ex:"A: Dating in your 30s is rough. B: Tell me about it!", note:"강한 공감", c:"genz"},
+  {k:"하던 거 계속해 (마무리)", e:"I'll let you get back to it", ex:"Take care, I'll let you get back to it!", note:"대화 마무리", c:"genz"},
+  {k:"공감해 (캐주얼)", e:"I feel you", ex:"I feel you, that situation is exhausting.", note:"feel you = 공감", c:"genz"},
+  {k:"더 말 안 해도 돼", e:"Say no more", ex:"Pizza night? Say no more, I'm in.", note:"즉각 동의", c:"genz"},
+  {k:"나는 절대 못해", e:"I could never", ex:"You run every morning at 5am? I could never.", note:"감탄성 거절", c:"genz"},
+  {k:"완전 네 스타일이다", e:"That's so you", ex:"This pink glittery diary? That's so you.", note:"= 너답다", c:"genz"},
+  {k:"마음이 복잡해", e:"I have mixed feelings", ex:"I have mixed feelings about moving abroad.", note:"mixed = 혼합된", c:"relate"},
+  {k:"존버 중이야", e:"I'm just hanging in there", ex:"Work's been tough, but I'm hanging in there.", note:"hang in there = 버티다", c:"genz"},
+  {k:"혼자 착각했다", e:"I played myself", ex:"I thought he liked me. I really played myself.", note:"play oneself = 자기 기만", c:"genz"},
+  {k:"기분 탓인가", e:"Maybe it's just me", ex:"Maybe it's just me, but this coffee tastes off.", note:"부드러운 의견 표현", c:"genz"},
+  {k:"살짝 과한 듯", e:"That's a bit much", ex:"You're sending him 20 texts? That's a bit much.", note:"= too much", c:"genz"},
+
+  // ===== Praise =====
+  {k:"잘했어! (캐주얼)", e:"Way to go!", ex:"Way to go! That was an amazing presentation.", note:"친구끼리", c:"daily"},
+  {k:"존경해 / 대단해", e:"Hats off to you", ex:"Hats off to you for handling that so well.", note:"모자 벗고 경의", c:"daily"},
+  {k:"수고했어", e:"Kudos to the team", ex:"Kudos to the team for shipping on time.", note:"그리스어 어원", c:"daily"},
+];
+
+
+const CATEGORIES = [
+  {id:"all", label:"All"},
+  {id:"weakonly", label:"⚡ Struggling"},
+  {id:"weak", label:"★ Weak points"},
+  {id:"biz", label:"Business"},
+  {id:"meet", label:"Meetings"},
+  {id:"article", label:"Article Active"},
+  {id:"passive", label:"Article Passive"},
+  {id:"slang", label:"Slang"},
+  {id:"relate", label:"💛 Relationships"},
+  {id:"genz", label:"Gen Z reactions"},
+  {id:"daily", label:"Daily"},
+  {id:"idiom", label:"Idioms"},
+  {id:"cafe", label:"Cafe"},
+];
+
+// ===== STATE =====
+let state = {
+  filter: "all",
+  direction: "krEn",
+  order: [],
+  idx: 0,
+  revealed: false,
+  marks: {},
+};
+
+// ===== Storage =====
+const STORAGE_KEY = "flashcards_yuran_v4";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (saved.filter) state.filter = saved.filter;
+      if (saved.direction) state.direction = saved.direction;
+      if (saved.marks) state.marks = saved.marks;
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      filter: state.filter,
+      direction: state.direction,
+      marks: state.marks,
+    }));
+    showSaveStatus("✓ saved");
+  } catch(e) {
+    showSaveStatus("✗ " + (e.message || e));
+  }
+}
+
+function exportProgress() {
+  const data = JSON.stringify({
+    filter: state.filter,
+    direction: state.direction,
+    marks: state.marks,
+    exported: new Date().toISOString(),
+  }, null, 2);
+  const blob = new Blob([data], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "flashcards-progress.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showSaveStatus("✓ exported");
+}
+
+function importProgress(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const saved = JSON.parse(e.target.result);
+      if (saved.filter) state.filter = saved.filter;
+      if (saved.direction) state.direction = saved.direction;
+      if (saved.marks) state.marks = saved.marks;
+      buildOrder();
+      render();
+      saveState();
+      showSaveStatus("✓ imported");
+    } catch(err) {
+      showSaveStatus("✗ invalid file");
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = "";
+}
+
+function showSaveStatus(msg) {
+  const el = document.getElementById("saveStatus");
+  if (el) {
+    el.textContent = msg;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.textContent = ""; }, 1500);
+  }
+}
+
+function getFilteredIndices() {
+  const idxs = [];
+  DECK.forEach((card, i) => {
+    if (state.filter === "all") {
+      idxs.push(i);
+    } else if (state.filter === "weakonly") {
+      // Cards with bad result or no streak, in current direction
+      const m = (state.marks[i] || {})[state.direction];
+      if (m && typeof m === "object") {
+        if (m.result === "bad" || (m.streak || 0) === 0) {
+          // only include if they've been seen at least once as "bad"
+          if (m.result === "bad") idxs.push(i);
+        }
+      }
+    } else if (card.c === state.filter) {
+      idxs.push(i);
+    }
+  });
+  return idxs;
+}
+
+function buildOrder() {
+  const idxs = getFilteredIndices();
+  // Filter out mastered cards probabilistically
+  const weighted = idxs.filter(i => {
+    const streak = getStreak(i);
+    const skipProb = getSkipProbability(streak);
+    return Math.random() >= skipProb;
+  });
+  // If filtering left us with too few, fall back to full list
+  const finalIdxs = weighted.length >= Math.min(5, idxs.length) ? weighted : idxs;
+  // shuffle
+  for (let i = finalIdxs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [finalIdxs[i], finalIdxs[j]] = [finalIdxs[j], finalIdxs[i]];
+  }
+  state.order = finalIdxs;
+  state.idx = 0;
+  state.revealed = false;
+}
+
+function renderFilters() {
+  const el = document.getElementById("filters");
+  el.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    let count;
+    if (cat.id === "all") {
+      count = DECK.length;
+    } else if (cat.id === "weakonly") {
+      count = 0;
+      DECK.forEach((_, i) => {
+        const m = (state.marks[i] || {})[state.direction];
+        if (m && typeof m === "object" && m.result === "bad") count++;
+      });
+    } else {
+      count = DECK.filter(c => c.c === cat.id).length;
+    }
+    const btn = document.createElement("button");
+    btn.className = "chip" + (state.filter === cat.id ? " active" : "");
+    btn.textContent = `${cat.label} (${count})`;
+    btn.onclick = () => {
+      state.filter = cat.id;
+      buildOrder();
+      render();
+      saveState();
+    };
+    el.appendChild(btn);
+  });
+}
+
+function currentCard() {
+  if (!state.order.length) return null;
+  const deckIdx = state.order[state.idx];
+  return { card: DECK[deckIdx], deckIdx };
+}
+
+function render() {
+  renderFilters();
+  const area = document.getElementById("cardArea");
+
+  if (!state.order.length) {
+    area.innerHTML = `<div class="empty"><div class="empty-big">∅</div>No cards in this category</div>`;
+    updateStats();
+    return;
+  }
+
+  // Ensure card HTML exists
+  if (!document.getElementById("card")) {
+    location.reload();
+    return;
+  }
+
+  const { card, deckIdx } = currentCard();
+  const catLabel = CATEGORIES.find(c => c.id === card.c)?.label || card.c;
+  const result = getResult(deckIdx);
+  const streak = getStreak(deckIdx);
+  let markBadge = "";
+  if (result === "ok") {
+    markBadge = streak >= 4 ? " · ★ mastered" : " · ✓" + (streak > 1 ? `×${streak}` : "");
+  } else if (result === "bad") {
+    markBadge = " · ✗";
+  }
+  const dirBadge = state.direction === "krEn" ? " · KR→EN" : " · EN→KR";
+
+  document.getElementById("cardTag").textContent = catLabel + dirBadge + markBadge;
+
+  // Direction-aware content
+  const promptEl = document.getElementById("promptText");
+  const answerEl = document.getElementById("answerText");
+  if (state.direction === "krEn") {
+    promptEl.textContent = card.k;
+    answerEl.textContent = card.e;
+  } else {
+    promptEl.textContent = card.e;
+    answerEl.textContent = card.k;
+  }
+  // Prompt font size — English is smaller since it's longer
+  promptEl.style.fontSize = state.direction === "krEn" ? "36px" : "32px";
+
+  // Example + note
+  const exEl = document.getElementById("exampleText");
+  const noteEl = document.getElementById("noteText");
+  if (card.ex) {
+    exEl.textContent = card.ex;
+    exEl.style.display = "";
+  } else {
+    exEl.style.display = "none";
+  }
+  if (card.note) {
+    noteEl.textContent = card.note;
+    noteEl.style.display = "";
+  } else {
+    noteEl.style.display = "none";
+  }
+
+  // Apply revealed state
+  const cardEl = document.getElementById("card");
+  const answerBlock = document.getElementById("answerBlock");
+  const hintEl = document.getElementById("hintTap");
+  if (state.revealed) {
+    cardEl.classList.add("revealed");
+    answerBlock.style.display = "";
+    hintEl.textContent = "Tap to hide";
+  } else {
+    cardEl.classList.remove("revealed");
+    answerBlock.style.display = "none";
+    hintEl.textContent = "Tap to show answer";
+  }
+
+  // direction toggle button state
+  const toggleBtn = document.getElementById("dirToggle");
+  if (toggleBtn) {
+    toggleBtn.textContent = state.direction === "krEn" ? "KR → EN" : "EN → KR";
+  }
+
+  // progress
+  document.getElementById("progressText").textContent = `${state.idx + 1} / ${state.order.length}`;
+  const pct = ((state.idx + 1) / state.order.length) * 100;
+  document.getElementById("progressFill").style.width = pct + "%";
+
+  updateStats();
+}
+
+function updateStats() {
+  const filtered = getFilteredIndices();
+  let seen = 0, ok = 0, bad = 0, mastered = 0;
+  filtered.forEach(i => {
+    const r = getResult(i);
+    const s = getStreak(i);
+    if (r) {
+      seen++;
+      if (r === "ok") ok++;
+      else bad++;
+      if (s >= 4) mastered++;
+    }
+  });
+  document.getElementById("sTotal").textContent = filtered.length;
+  document.getElementById("sDone").textContent = seen;
+  document.getElementById("sOk").textContent = ok;
+  const bEl = document.getElementById("sBad");
+  if (bEl) bEl.textContent = bad;
+  const mEl = document.getElementById("sMastered");
+  if (mEl) mEl.textContent = mastered;
+}
+
+function toggleReveal() {
+  state.revealed = !state.revealed;
+  render();
+}
+
+function nextCard() {
+  if (!state.order.length) return;
+  state.idx = (state.idx + 1) % state.order.length;
+  state.revealed = false;
+  render();
+  saveState();
+}
+
+function prevCard() {
+  if (!state.order.length) return;
+  state.idx = (state.idx - 1 + state.order.length) % state.order.length;
+  state.revealed = false;
+  render();
+  saveState();
+}
+
+// Mastery thresholds
+// streak 0-1: normal frequency
+// streak 2: 50% chance to skip
+// streak 3: 75% chance to skip
+// streak 4+: 90% chance to skip (mastered)
+function getSkipProbability(streak) {
+  if (!streak || streak < 2) return 0;
+  if (streak === 2) return 0.5;
+  if (streak === 3) return 0.75;
+  return 0.9;
+}
+
+function getMark(deckIdx) {
+  const m = state.marks[deckIdx];
+  if (!m) return null;
+  return m[state.direction] || null;
+}
+
+function getStreak(deckIdx) {
+  const mark = getMark(deckIdx);
+  if (!mark || typeof mark !== "object") return 0;
+  return mark.streak || 0;
+}
+
+function getResult(deckIdx) {
+  const mark = getMark(deckIdx);
+  if (!mark) return null;
+  // legacy format: string "ok" or "bad"
+  if (typeof mark === "string") return mark;
+  return mark.result || null;
+}
+
+function mark(ok) {
+  const cur = currentCard();
+  if (!cur) return;
+  if (!state.marks[cur.deckIdx]) state.marks[cur.deckIdx] = {};
+  const prev = state.marks[cur.deckIdx][state.direction];
+  let prevStreak = 0;
+  if (prev && typeof prev === "object") prevStreak = prev.streak || 0;
+  
+  state.marks[cur.deckIdx][state.direction] = {
+    result: ok ? "ok" : "bad",
+    streak: ok ? prevStreak + 1 : 0,
+    updated: Date.now(),
+  };
+  saveState();
+  // auto-advance
+  setTimeout(() => nextCard(), 150);
+}
+
+function toggleDirection() {
+  state.direction = state.direction === "krEn" ? "enKr" : "krEn";
+  state.revealed = false;
+  render();
+  saveState();
+}
+
+function shuffleDeck() {
+  buildOrder();
+  render();
+  saveState();
+}
+
+function resetProgress() {
+  if (!confirm("진도/점수 전부 초기화할까?")) return;
+  state.marks = {};
+  buildOrder();
+  render();
+  saveState();
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleReveal(); }
+  else if (e.key === "ArrowRight") nextCard();
+  else if (e.key === "ArrowLeft") prevCard();
+  else if (e.key === "1" || e.key.toLowerCase() === "x") mark(false);
+  else if (e.key === "2" || e.key.toLowerCase() === "o") mark(true);
+});
+
+// Init
+loadState();
+if (!state.order.length) buildOrder();
+render();
+</script>
+</body>
+</html>
